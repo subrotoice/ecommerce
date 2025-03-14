@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-redLight: #f35c7a;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
