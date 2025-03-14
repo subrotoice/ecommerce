@@ -43,7 +43,9 @@ export default function RootLayout({
 
 ## Navbar
 
-Navbar.tsx | Tricky one. Height given h-20 parent. Then create two layout for Mobile and Bigger Screens which is different code. Bigger screen use w-1/3, w-2/3 and w-1/2, w-1/2
+Navbar.tsx | Tricky one. Height given h-20 parent. Then create two layout for Mobile and Bigger Screens which is different code.
+Bigger screen use w-1/3, w-2/3 and w-1/2, w-1/2 <br>
+In Small desktop hide menu items. <br>
 Most smart menu I seen ever.
 
 ```jsx
@@ -323,8 +325,6 @@ const CartModal = () => {
     </div>
   );
 };
-
-export default CartModal;
 ```
 
 next.config.ts for allowing externeal images
@@ -350,6 +350,112 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-```jsx
+## HomePage
 
+Slider.tsx | Height: h-[calc(100vh-80px)], because navbar height is h-20, 20/4= 5rem is 5x16=80px
+
+```jsx
+"client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+const slides = [
+  {
+    id: 1,
+    title: "Summer Sale Collections",
+    description: "Sale! Up to 50% off!",
+    img: "https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=800",
+    url: "/",
+    bg: "bg-gradient-to-r from-yellow-50 to-pink-50",
+  },
+  {
+    id: 2,
+    title: "Winter Sale Collections",
+    description: "Sale! Up to 50% off!",
+    img: "https://images.pexels.com/photos/1021693/pexels-photo-1021693.jpeg?auto=compress&cs=tinysrgb&w=800",
+    url: "/",
+    bg: "bg-gradient-to-r from-pink-50 to-blue-50",
+  },
+  {
+    id: 3,
+    title: "Spring Sale Collections",
+    description: "Sale! Up to 50% off!",
+    img: "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=800",
+    url: "/",
+    bg: "bg-gradient-to-r from-blue-50 to-yellow-50",
+  },
+];
+
+const Slider = () => {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  });
+
+  return (
+    <div className="h-[calc(100vh-80px)] overflow-hidden">
+      <div
+        className="w-max h-full flex transition-all ease-in-out duration-1000"
+        style={{ transform: `translateX(-${current * 100}vw)` }}
+      >
+        {slides.map((slide) => (
+          <div
+            className={`${slide.bg} w-screen h-full flex flex-col gap-16 xl:flex-row`}
+            key={slide.id}
+          >
+            {/* TEXT CONTAINER  */}
+            <div className="h-1/2 xl:h-full xl:w-1/2 flex flex-col items-center justify-center gap-8 2xl:gap-12 text-center">
+              <h2 className="text-xl lg:text-3xl 2xl:text-5xl">
+                {slide.description}
+              </h2>
+              <h1 className="text-5xl lg:text-6xl 2xl:text-8xl font-semibold">
+                {slide.title}
+              </h1>
+              <Link href="/">
+                <button className="rounded-md bg-black text-white px-4 py-3">
+                  Shop Now
+                </button>
+              </Link>
+            </div>
+            {/* IMAGE CONTAINER  */}
+            <div className="h-1/2 xl:h-full xl:w-1/2 relative">
+              <Image
+                src={slide.img}
+                fill
+                sizes="100%"
+                className="object-cover"
+                alt=""
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      // NAVIGATION BUTTON
+      <div className="absolute m-auto left-1/2 bottom-8 gap-4 flex">
+        {slides.map((slide, index) => (
+          <div
+            className={`w-3 h-3 rounded-full ring-1 ring-gray-600 cursor-pointer flex justify-center items-center ${
+              current === index && "scale-150"
+            }`}
+            key={slide.id}
+            onClick={() => setCurrent(index)}
+          >
+            {current === index && (
+              <div className="w-[6px] h-[6px] bg-gray-600 rounded-full"></div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Slider;
 ```
