@@ -1,6 +1,7 @@
 ## Getting Started
 
-First, run the development server:
+- Always try to do Mobile design then think about bigger screen
+- First fetche all date (page.tsx) then populate that data using component. If and only if there is client interaction make that component as "use client"
 
 ```bash
 npx create-next-app@latest
@@ -350,9 +351,15 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-## HomePage
+# HomePage
 
-Slider.tsx | Height: h-[calc(100vh-80px)], because navbar height is h-20, 20/4= 5rem is 5x16=80px <br>
+1. Slider
+2. Product List
+3. Categories
+4. Footer
+
+## Slider.tsx | Height: h-[calc(100vh-80px)], because navbar height is h-20, 20/4= 5rem is 5x16=80px <br>
+
 fill [nextjs.org/docs/app/api-reference/components/image](https://nextjs.org/docs/app/api-reference/components/image)
 
 fill={true} // {true} | {false}<br>
@@ -604,4 +611,466 @@ const ProductList = () => {
 };
 
 export default ProductList;
+```
+
+## Categories
+
+```jsx
+import Image from "next/image";
+import Link from "next/link";
+
+const CategoryList = () => {
+  return (
+    <div className="px-4 overflow-x-scroll scrollbar-hide">
+      <div className="flex gap-4 md:gap-8">
+        <Link // many links will come from backend
+          href="/list?cat?test"
+          className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/4 xl:w-1/6"
+        >
+          <div className="relative bg-slate-100 w-full h-96">
+            <Image
+              src="https://images.pexels.com/photos/28125586/pexels-photo-28125586/free-photo-of-a-camera-on-a-wooden-table-with-a-strap.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load"
+              alt=""
+              fill
+              sizes="20vw"
+              className="object-cover"
+            />
+          </div>
+          <h1 className="mt-8 font-light text-xl tracking-wide">
+            Category Name
+          </h1>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default CategoryList;
+```
+
+global.css
+
+```css
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+```
+
+## Footer
+
+- First divide into TOP(LEFT, MIDDLE, RIGHT), BOTTOM
+- LEFT: w-1/2, MIDDLE: w-2/4, RIGHT: w-1/4
+
+Flex model to divide into columns, But you can do it by grid efficiently
+
+```jsx
+  <div className="flex flex-col md:flex-row">
+        {/* LEFT  */}
+        <div className="w-full md:w-1/2 lg:w-1/4">
+        {/* CENTER */}
+        <div className="w-full lg:w-2/4 hidden lg:flex">
+        {/* RIGHT */}
+        <div className="w-full md:w-1/2 lg:w-1/4">
+```
+
+```jsx
+import Image from "next/image";
+
+const Footer = () => {
+  return (
+    <div className="text-sm">
+      {/* TOP  */}
+      <div className="flex flex-col md:flex-row gap-24 justify-between">
+        {/* LEFT  */}
+        <div className="w-full md:w-1/2 lg:w-1/4 flex flex-col gap-8 text-sm pr-4">
+          <h1 className="uppercase text-xl">eDev</h1>
+          <p>Uttor Shampur 7021, Khoksha, Kushtia, Bangladesh</p>
+          <p>subroto.iu@gmail.com</p>
+          <p>+01722272790</p>
+          <div className="flex gap-4 items-center">
+            <Link href="/">
+              <Image src="/facebook.png" alt="" width={16} height={16} />
+            </Link>
+            <Link href="/">
+              <Image src="/instagram.png" alt="" width={16} height={16} />
+            </Link>
+            <Link href="/">
+              <Image src="/youtube.png" alt="" width={16} height={16} />
+            </Link>
+            <Link href="/">
+              <Image src="/pinterest.png" alt="" width={16} height={16} />
+            </Link>
+            <Link href="/">
+              <Image src="/x.png" alt="" width={16} height={16} />
+            </Link>
+          </div>
+        </div>
+        {/* CENTER */}
+        <div className="w-full lg:w-2/4 hidden lg:flex">
+          <div className="w-full">
+            <h1 className="uppercase mb-16 font-medium text-lg">Company</h1>
+            <ul className="flex flex-col gap-6">
+              <li>
+                <Link href="/">About Us</Link>
+              </li>
+              <li>
+                <Link href="/">Careers</Link>
+              </li>
+              <li>
+                <Link href="/">Affilliates</Link>
+              </li>
+              <li>
+                <Link href="/">Blog</Link>
+              </li>
+              <li>
+                <Link href="/">Contact Us</Link>
+              </li>
+            </ul>
+          </div>
+          <div className="w-full">
+            <h1 className="uppercase mb-16 font-medium text-lg">Shop</h1>
+            <ul className="flex flex-col gap-6">
+              <li>
+                <Link href="/">New Arrivals</Link>
+              </li>
+              <li>
+                <Link href="/">Accessories</Link>
+              </li>
+              <li>
+                <Link href="/">Men</Link>
+              </li>
+              <li>
+                <Link href="/">Women</Link>
+              </li>
+              <li>
+                <Link href="/">All Products</Link>
+              </li>
+            </ul>
+          </div>
+          <div className="w-full">
+            <h1 className="uppercase mb-16 font-medium text-lg">HELP</h1>
+            <ul className="flex flex-col gap-6">
+              <li>
+                <Link href="/">Customer Service</Link>
+              </li>
+              <li>
+                <Link href="/">My Account</Link>
+              </li>
+              <li>
+                <Link href="/">Find a Store</Link>
+              </li>
+              <li>
+                <Link href="/">Legal & Privacy</Link>
+              </li>
+              <li>
+                <Link href="/">Gift Card</Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+        {/* RIGHT */}
+        <div className="w-full md:w-1/2 lg:w-1/4 flex flex-col gap-8">
+          <h1 className="uppercase font-medium text-lg">Subscribe</h1>
+          <p>
+            Be the first to get the latest nes about trends, peomotions and much
+            more!
+          </p>
+          <div className="flex">
+            <input
+              className="outline-0 bg-white py-4 pl-2 w-3/4"
+              placeholder="Email address"
+              type="text"
+            />
+            <button className="uppercase w-1/4 bg-redLight text-white p-2">
+              Join
+            </button>
+          </div>
+          <p>Secure Payments</p>
+          <div className="flex gap-4">
+            <Image src="/discover.png" width={40} height={20} alt="" />
+            <Image src="/skrill.png" width={40} height={20} alt="" />
+            <Image src="/paypal.png" width={40} height={20} alt="" />
+            <Image src="/mastercard.png" width={40} height={20} alt="" />
+            <Image src="/visa.png" width={40} height={20} alt="" />
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM */}
+      <div className="flex flex-col lg:flex-row text-center justify-between mt-12">
+        <p>&copy; 2025 Subroto Biswas</p>
+        <div className="flex justify-center gap-8">
+          <div className="flex gap-4">
+            <span className="text-gray-700">Language</span>
+            <span className="font-semibold">United States | English</span>
+          </div>
+          <div className="flex gap-4">
+            <span className="text-gray-700">Currency</span>
+            <span className="font-semibold">$ USD</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Footer;
+```
+
+# List Page
+
+- To prevend overflow we can use flex wrap
+- Title of select is first element with no value
+
+```jsx
+<select>
+  <option>Sort By</option> // Title of the select
+  <option value="">Newest</option>
+  <option value="">Oldest</option>
+</select>
+```
+
+## List Page
+
+list/page.tsx
+
+```jsx
+import Image from "next/image";
+
+const ListPage = () => {
+  return (
+    <div className="px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+      {/* CAMPAING */}
+      <div className="hidden md:flex justify-between bg-pink-50 px-4 h-64">
+        <div className="w-2/3 flex flex-col items-center justify-center gap-8">
+          <h1 className="text-4xl font-semibold leading-[48px] text-gray-700">
+            Grab up to 50% of on
+            <br />
+            Selected Products
+          </h1>
+          <button className="rounded-3xl bg-redLight text-white w-max py-3 px-5 text-sm">
+            Buy Now
+          </button>
+        </div>
+        <div className="relative w-1/3">
+          <Image src="/woman.png" alt="" fill className="object-contain" />
+        </div>
+      </div>
+
+      {/* FILTER */}
+      <Filter />
+
+      {/* PRODUCTS */}
+      <h1 className="">Shoes For You!</h1>
+      <ProductList />
+    </div>
+  );
+};
+
+export default ListPage;
+```
+
+## Filter
+
+```jsx
+const Filter = () => {
+  return (
+    <div className="flex justify-between my-8">
+      {/* LEFT */}
+      <div className="flex flex-wrap gap-6">
+        <select
+          name="type"
+          id=""
+          className="bg-[#EBEDED] text-sm font-medium py-2 pl-2 rounded-full w-25"
+        >
+          <option value="">Type</option>
+          <option value="physical">Physical</option>
+          <option value="digital">Digital</option>
+        </select>
+        <input
+          type="text"
+          name="min"
+          className="ring-1 ring-gray-400 outline-gray-500 pl-2 rounded-full w-24"
+          placeholder="min price"
+        />
+        <input
+          type="text"
+          name="max"
+          className="border border-gray-300 outline-gray-400 pl-2 rounded-full w-24"
+          placeholder="max price"
+        />
+        <select name="" id="" className="bg-gray-100 p-2 rounded-full w-20">
+          <option value="">Color</option>
+          <option value="">1</option>
+          <option value="">2</option>
+        </select>
+        <select name="" id="" className="bg-gray-100 p-2 rounded-full w-28">
+          <option value="">Category</option>
+          <option value="">1</option>
+          <option value="">2</option>
+        </select>
+        <select name="" id="" className="bg-gray-100 p-2 rounded-full w-28">
+          <option value="">All Filters</option>
+          <option value="">1</option>
+          <option value="">2</option>
+        </select>
+      </div>
+      {/* RIGHT */}
+      <div className="">
+        <select
+          name=""
+          id=""
+          className="outline-gray-300 border border-gray-200 p-2 rounded-full w-35"
+        >
+          <option>Sort By</option>
+          <option value="">Price (low to high)</option>
+          <option value="">Price (high to low)</option>
+          <option value="">Newest</option>
+          <option value="">Oldest</option>
+        </select>
+      </div>
+    </div>
+  );
+};
+
+export default Filter;
+```
+
+# Single Page Design
+
+ProductImages.tsx | Product main images
+
+- Idea is when click on image show that image useState(index)
+- First fetche all date (page.tsx) then populate that data using component. If and only if there is client interaction make that component as "use client"
+
+```jsx
+"use client";
+import Image from "next/image";
+
+const images = [
+  {
+    id: 1,
+    url: "https://images.pexels.com/photos/18166547/pexels-photo-18166547/free-photo-of-back-view-of-woman-in-black-dress-on-sea-shore.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load",
+  },
+  {
+    id: 2,
+    url: "https://images.pexels.com/photos/3944405/pexels-photo-3944405.jpeg?auto=compress&cs=tinysrgb&w=600",
+  },
+  {
+    id: 3,
+    url: "https://images.pexels.com/photos/4968386/pexels-photo-4968386.jpeg?auto=compress&cs=tinysrgb&w=600",
+  },
+  {
+    id: 4,
+    url: "https://images.pexels.com/photos/5241037/pexels-photo-5241037.jpeg?auto=compress&cs=tinysrgb&w=600",
+  },
+];
+
+const ProductImages = () => {
+  const [index, setIndex] = useState(0);
+
+  return (
+    <div>
+      <div className="h-[500px] relative">
+        <Image
+          src={images[index].url}
+          alt=""
+          fill
+          sizes="50vw"
+          className="object-cover rounded-md"
+        />
+      </div>
+      <div className="flex gap-4 mt-8">
+        {images.map((image, index) => (
+          <div
+            key={image.id}
+            className="w-1/4 h-32 relative"
+            onClick={() => setIndex(index)}
+          >
+            <Image
+              src={image.url}
+              alt=""
+              fill
+              sizes="20vw"
+              className="object-cover rounded-md"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ProductImages;
+```
+
+## Add Item
+
+- Add to cart, increase and decreae quantity, Select color, size
+
+  Add.tsx
+
+```jsx
+"use client";
+import { useState } from "react";
+
+// TEMPORARY
+const stock = 4;
+
+const Add = () => {
+  const [quantity, setQuantity] = useState(1);
+
+  const handelQuantity = (action: "dec" | "inc") => {
+    if (action === "dec" && quantity > 1)
+      setQuantity(quantity <= 1 ? 1 : quantity - 1);
+    if (action === "inc" && quantity < stock) setQuantity(quantity + 1);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="font-medium">Choose a Quantity</h1>
+      <div className="flex justify-between">
+        <div className="flex items-center gap-4">
+          <div className="bg-gray-100 rounded-3xl flex items-center justify-between w-32">
+            <button
+              className="cursor-pointer text-xl px-4 py-2"
+              onClick={() => handelQuantity("dec")}
+            >
+              -
+            </button>
+            {quantity}
+            <button
+              className="cursor-pointer text-xl px-4 py-2"
+              onClick={() => handelQuantity("inc")}
+            >
+              +
+            </button>
+          </div>
+          <div className="">
+            Only <span className="text-orange-500">4 items</span> left! <br />
+            Don't miss it
+          </div>
+        </div>
+        <button className="w-36 text-sm rounded-3xl ring-1 ring-redLight text-redLight py-2 px-4 hover:bg-redLight cursor-pointer hover:text-white disabled:cursor-not-allowed disabled:bg-pink-200 disabled:text-white disabled:ring-0">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Add;
+```
+
+# Backend Wix | Don't worry about database, Authentication, Server Security
+
+- [wix.com/studio/developers/headless](https://www.wix.com/studio/developers/headless)
+- [Wix Doc](https://dev.wix.com/docs/go-headless)
+
+```jsx
+
 ```
