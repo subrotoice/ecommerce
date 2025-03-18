@@ -1071,6 +1071,124 @@ export default Add;
 - [wix.com/studio/developers/headless](https://www.wix.com/studio/developers/headless)
 - [Wix Doc](https://dev.wix.com/docs/go-headless)
 
-```jsx
+```bash
+npm i @wix/sdk @wix/stores
+```
 
+```jsx
+import { products } from "@wix/stores";
+import { createClient, OAuthStrategy } from "@wix/sdk";
+
+//To access the Wix APIs, create a client with the createClient() function imported from the @wix/sdk package.
+const myWixClient = createClient({
+  modules: { products },
+  auth: OAuthStrategy({ clientId: "81ce0777-b6e6-4f6e-b24e-adc5520717bf" }),
+});
+
+const productList = await myWixClient.products.queryProducts().find();
+
+console.log("My Products:");
+console.log("Total: ", productList.items.length);
+console.log(productList.items.map((item) => item.name).join("\n"));
+```
+
+```bash
+npm i js-cookie
+npm i --save-dev @types/js-cookie
+```
+
+### Creating Context API for sharing data all over the app.
+
+- js-cookie is used if user is not login and if he select cart and refresh it sustain.
+- "wixClient" spred it all over the app using react context
+  \_context/wixContext.tsx
+
+```jsx
+"use client";
+
+import { createClient, OAuthStrategy } from "@wix/sdk";
+import { products, collections } from "@wix/stores";
+import Cookies from "js-cookie";
+import { createContext } from "react";
+import { ReactNode } from "react";
+
+const refreshToken = JSON.parse(Cookies.get("refreshToken") || "{}");
+
+const wixClient = createClient({
+  modules: {
+    products,
+    collections,
+  },
+  auth: OAuthStrategy({
+    clientId: process.env.NEXT_PUBLIC_WIX_CLIENT_ID!,
+    tokens: {
+      refreshToken,
+      accessToken: { value: "", expiresAt: 0 },
+    },
+  }),
+});
+
+export type WixClient = typeof wixClient;
+
+export const WixClientContext = createContext<WixClient>(wixClient);
+
+export const WixClientContextProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  return (
+    <WixClientContext.Provider value={wixClient}>
+      {children}
+    </WixClientContext.Provider>
+  );
+};
+```
+
+Wrap Main Layout. No need to use "use client" | It's just for demonstration we will use server component
+app/layout.tsx
+
+```jsx
+return (
+  <html lang="en">
+    <body className={inter.className}>
+      <WixClientContextProvider>
+        <Navbar />
+        {children}
+        <div className="mt-12 px-4 md:px-8 lg:px-16 xl:32 2xl:px-64 bg-gray-100 py-12">
+          <Footer />
+        </div>
+      </WixClientContextProvider>
+    </body>
+  </html>
+);
+```
+
+Create an hook so you need not to use wixClientContext different time.
+\_hooks/useWixClient.tsx
+
+```jsx
+import { useContext } from "react";
+import { WixClientContext } from "../_context/wixContext";
+
+export const useWixClient = () => {
+  return useContext(WixClientContext);
+};
+```
+
+app/page.tsx
+
+```jsx
+"use client";
+export default function Home() {
+  const wixClient = useWixClient();
+
+  useEffect(() => {
+    const getProducts = async () => {
+      const res = await wixClient.products.queryProducts().find();
+      console.log(res);
+    };
+    getProducts();
+  }, [wixClient]);
+}
 ```
