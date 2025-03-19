@@ -1097,6 +1097,8 @@ npm i js-cookie
 npm i --save-dev @types/js-cookie
 ```
 
+## Data Fetching: Client Component
+
 ### Creating Context API for sharing data all over the app.
 
 - js-cookie is used if user is not login and if he select cart and refresh it sustain.
@@ -1186,9 +1188,247 @@ export default function Home() {
   useEffect(() => {
     const getProducts = async () => {
       const res = await wixClient.products.queryProducts().find();
-      console.log(res);
+      console.log(res); // console output
     };
     getProducts();
   }, [wixClient]);
 }
+```
+
+## Data Fetching: Server Component
+
+\_lib/wixClientServer.ts
+
+```jsx
+import { createClient, OAuthStrategy } from "@wix/sdk";
+import { products, collections } from "@wix/stores";
+import { cookies } from "next/headers";
+
+export const wixClientServer = async () => {
+  let refreshToken;
+  try {
+    const cookieStore = await cookies();
+    refreshToken = JSON.parse(cookieStore.get("refreshToken")?.value || "{}");
+  } catch (error) {}
+
+  const wixClient = createClient({
+    modules: {
+      products,
+      collections,
+    },
+    auth: OAuthStrategy({
+      clientId: process.env.NEXT_PUBLIC_WIX_CLIENT_ID!,
+      tokens: {
+        refreshToken,
+        accessToken: { value: "", expiresAt: 0 },
+      },
+    }),
+  });
+
+  return wixClient;
+};
+```
+
+### **Fetch any data using this code **
+
+```jsx
+const wixClient = await wixClientServer();
+const res = await wixClient.products
+  .queryProducts()
+  .eq("collectionIds", categoryId)
+  .limit(limit || PRODUCT_PER_PAGE)
+  .find();
+
+console.log(res.items[0]);
+```
+
+app/page.tsx
+
+```jsx
+import { wixClientServer } from "./_lib/wixClientServer";
+
+export default async function Home() {
+  // Client side data fetch
+  // const wixClient = useWixClient();
+
+  // useEffect(() => {
+  //   const getProducts = async () => {
+  //     const res = await wixClient.products.queryProducts().find();
+  //     console.log(res);
+  //   };
+  //   getProducts();
+  // }, [wixClient]);
+
+  // Server side data fetch
+  const wixClient = await wixClientServer();
+  const res = await wixClient.products.queryProducts().find();
+  console.log(res);
+
+  return (
+    <>
+      <Slider />
+      <div className="mt-24 px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+        <h1 className="text-2xl">Featured Products</h1>
+        <ProductList />
+      </div>
+      <div className="mt-24">
+        <h1 className="text-2xl mb-8 px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+          Categories
+        </h1>
+        <CategoryList />
+      </div>
+    </>
+  );
+}
+```
+
+## Dynamic ProductList for feature category
+
+page.tsx | <ProductList categoryId={process.env.FEATURED_PRODUCTS_CATEGORY_ID!} limit={4} />
+
+```jsx
+import ProductList from "./_components/ProductList";
+
+export default async function Home() {
+  return (
+    <>
+      <Slider />
+      <div className="mt-24 px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+        <h1 className="text-2xl">Featured Products</h1>
+        <ProductList
+          categoryId={process.env.FEATURED_PRODUCTS_CATEGORY_ID!}
+          limit={4}
+        />
+      </div>
+      <div className="mt-24">
+        <h1 className="text-2xl mb-8 px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+          Categories
+        </h1>
+        <CategoryList />
+      </div>
+    </>
+  );
+}
+```
+
+### **ProductList.tsx | Fetch from server and populate**
+
+```jsx
+import { wixClientServer } from "../_lib/wixClientServer";
+
+const PRODUCT_PER_PAGE = 20;
+
+const ProductList = async ({
+  categoryId,
+  limit,
+}: {
+  categoryId: string,
+  limit: number,
+}) => {
+  const wixClient = await wixClientServer();
+  const res = await wixClient.products
+    .queryProducts()
+    .eq("collectionIds", categoryId)
+    .limit(limit || PRODUCT_PER_PAGE)
+    .find();
+
+  console.log(res.items[0]);
+
+  return (
+    <div className="mt-12 flex gap-x-8 gap-y-16 justify-between flex-wrap">
+      {res.items.map((product) => (
+        <Link
+          href={"/" + product.slug}
+          className="w-full flex flex-col gap-4 sm:w-[45%] lg:w-[22%]"
+          key={product._id}
+        >
+          <div className="relative w-full h-80">
+            <Image
+              src={product.media?.mainMedia?.image?.url || "/product.png"}
+              alt=""
+              fill
+              sizes="25vw"
+              className="absolute object-cover rounded-md z-10 hover:opacity-0 transition-opacity easy duration-500"
+            />
+            {product.media?.items && (
+              <Image
+                src={product.media?.items[1]?.image?.url || "/product.png"}
+                alt=""
+                fill
+                sizes="25vw"
+                className="absolute object-cover rounded-md"
+              />
+            )}
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium">{product.name}</span>
+            <div className="font-semibold">${product.priceData?.price}</div>
+          </div>
+          <div
+            className="text-sm text-gray-500"
+            dangerouslySetInnerHTML={{
+              __html:
+                product.additionalInfoSections?.find(
+                  (section: any) => section.title === "sortDesc"
+                )?.description || "",
+            }}
+          ></div>
+          <button className="rounded-2xl ring-1 ring-redLight px-4 py-2 hover:bg-redLight hover:text-white w-max cursor-pointer">
+            Add to Cart
+          </button>
+        </Link>
+      ))}
+    </div>
+  );
+};
+
+export default ProductList;
+```
+
+### **Category List**
+
+app/page.tsx
+
+```jsx
+<Suspense fallback={"Loading..."}>
+  <CategoryList />
+</Suspense>
+```
+
+```jsx
+import { wixClientServer } from "../_lib/wixClientServer";
+
+const CategoryList = async () => {
+  const wixClient = await wixClientServer();
+  const cats = await wixClient.collections.queryCollections().find();
+
+  return (
+    <div className="px-4 overflow-x-scroll scrollbar-hide">
+      <div className="flex gap-4 md:gap-8">
+        {cats.items.map((cat) => (
+          <Link
+            href={`/list?cat?${cat.slug}`}
+            className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/4 xl:w-1/6"
+            key={cat._id}
+          >
+            <div className="relative bg-slate-100 w-full h-96">
+              <Image
+                src={cat.media?.mainMedia?.image?.url || "/category.png"}
+                alt=""
+                fill
+                sizes="20vw"
+                className="object-cover"
+              />
+            </div>
+            <h1 className="mt-8 font-light text-xl tracking-wide">
+              {cat.name}
+            </h1>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default CategoryList;
 ```
