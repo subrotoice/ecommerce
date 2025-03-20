@@ -5,13 +5,13 @@ import { wixClientServer } from "../_lib/wixClientServer";
 import { Suspense } from "react";
 
 const ListPage = async ({
-  searchParams: { cat },
+  searchParams,
 }: {
   searchParams: { cat: string };
 }) => {
   const wixClient = await wixClientServer();
   const res = await wixClient.collections.getCollectionBySlug(
-    cat || "all-products"
+    searchParams.cat || "all-products"
   );
 
   return (
@@ -45,12 +45,12 @@ const ListPage = async ({
       {/* PRODUCTS */}
       <h1 className="">Shoes For You!</h1>
       <Suspense fallback="Loading...">
-        {/* <ProductList
+        <ProductList
           categoryId={
             res.collection?._id || "00000000-000000-000000-000000000001"
           }
           searchParams={searchParams}
-        /> */}
+        />
       </Suspense>
     </div>
   );

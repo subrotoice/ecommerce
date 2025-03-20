@@ -1,16 +1,21 @@
 "use client";
 import { useState } from "react";
 
-// TEMPORARY
-const stock = 4;
-
-const Add = () => {
+const Add = ({
+  productId,
+  variantId,
+  stockNumber,
+}: {
+  productId: string;
+  variantId: string;
+  stockNumber: number;
+}) => {
   const [quantity, setQuantity] = useState(1);
 
   const handelQuantity = (action: "dec" | "inc") => {
     if (action === "dec" && quantity > 1)
       setQuantity(quantity <= 1 ? 1 : quantity - 1);
-    if (action === "inc" && quantity < stock) setQuantity(quantity + 1);
+    if (action === "inc" && quantity < stockNumber) setQuantity(quantity + 1);
   };
 
   return (
@@ -34,7 +39,8 @@ const Add = () => {
             </button>
           </div>
           <div className="">
-            Only <span className="text-orange-500">4 items</span> left! <br />
+            Only <span className="text-orange-500">{stockNumber} items </span>
+            left! <br />
             Don't miss it
           </div>
         </div>

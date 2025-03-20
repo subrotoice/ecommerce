@@ -1432,3 +1432,383 @@ const CategoryList = async () => {
 
 export default CategoryList;
 ```
+
+### **Single Product Page**
+
+app/[slug]/page.tsx
+
+```jsx
+import Add from "../_components/Add";
+import CustomizeProducts from "../_components/CustomizeProducts";
+
+const SinglePage = async ({ params }: { params: { slug: string } }) => {
+  const { slug } = await params;
+  const wixClient = await wixClientServer();
+  const products = await wixClient.products
+    .queryProducts()
+    .eq("slug", slug)
+    .find();
+
+  if (!products.items.length) return notFound();
+
+  const product = products.items[0];
+  // console.log(product.productOptions);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-16 px-4 md:px-8 lg:px-16 xl:px-32 2xl:px-64">
+      {/* IMAGE */}
+      {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
+
+      <div className="w-full lg:w-1/2 lg:sticky top-20 h-max">
+        <ProductImages items={product.media?.items} />
+      </div>
+      {/* TEXT */}
+      <div className="w-full lg:w-1/2 flex flex-col gap-6">
+        <h1 className="text-4xl font-medium">{product.name}</h1>
+        <p className="text-gray-500">{product.description}</p>
+        <div className="h-[2px] bg-gray-100" />
+        <div className="flex items-center gap-4">
+          {product.priceData?.price === product.priceData?.discountedPrice ? (
+            <h2 className="font-medium text-2xl">
+              ${product.priceData?.price}
+            </h2>
+          ) : (
+            <>
+              <h3 className="text-xl text-gray-500 line-through">
+                ${product.priceData?.price}
+              </h3>
+              <h2 className="font-medium text-2xl">
+                ${product.priceData?.discountedPrice}
+              </h2>
+            </>
+          )}
+        </div>
+        <div className="h-[2px] bg-gray-100" />
+        {product.variants && product.productOptions ? (
+          <CustomizeProducts
+            productId={product._id!}
+            variants={product.variants}
+            productoptions={product.productOptions}
+          />
+        ) : (
+          <Add
+            productId={product._id!}
+            variantId="00000000-0000-0000-0000-000000000000"
+            stockNumber={product.stock?.quantity || 0}
+          />
+        )}
+
+        <div className="h-[2px] bg-gray-100" />
+        {product.additionalInfoSections &&
+          product.additionalInfoSections.map((additionalSection, index) => (
+            <div className="text-sm" key={index}>
+              <h4 className="font-medium mb-4">{additionalSection.title}</h4>
+              <p>{additionalSection.description}</p>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+export default SinglePage;
+```
+
+### **CustomizeProducts.tsx | Most Difficult One | Javascript Game**
+
+CustomizeProducts.tsx(First Version for understanding)
+
+```jsx
+"use client";
+
+import { products } from "@wix/stores";
+import { useState } from "react";
+
+interface SelectedOption {
+  [key: string]: string;
+}
+
+const CustomizeProducts = ({
+  productId,
+  variants,
+  productoptions,
+}: {
+  productId: string;
+  variants: products.Variant[];
+  productoptions: products.ProductOption[];
+}) => {
+  const [selectedItem, setSelectedItem] = useState<SelectedOption>({});
+  const [selectedVariant, setSelectedVariant] = useState<products.Variant>();
+
+  useEffect(() => {
+    const variant = variants.find((v) => {
+      const variantChoices = v.choices;
+      if (!variantChoices) return false;
+
+      return Object.entries(selectedItem).every(
+        ([key, value]) => variantChoices[key] === value
+      );
+    });
+
+    setSelectedVariant(variant);
+  }, [selectedItem, variants]);
+
+  const handelOptionSelect = (optionType: string, value: string) => {
+    setSelectedItem((prev) => ({ ...prev, [optionType]: value }));
+  };
+
+  console.log(variants);
+
+  const isVariantInStock = (choices: SelectedOption) => {
+    return variants.some((v) => {
+      const variantChoices = v.choices;
+      if (!variantChoices) return false;
+
+      return (
+        Object.entries(choices).every(
+          ([key, value]) => variantChoices[key] === value
+        ) &&
+        v.stock?.inStock &&
+        v.stock.quantity &&
+        v.stock.quantity > 0
+      );
+    });
+  };
+
+  console.log(selectedItem);
+  console.log(isVariantInStock(selectedItem));
+
+  return (
+    <div className="flex flex-col gap-6">
+      {productoptions.map((option) => (
+        <>
+          <h4 className="font-medium">Choose a {option.name}</h4>
+          <ul className="flex flex-col gap-3">
+            {option.choices?.map((choice) => {
+              const disabled = !isVariantInStock({
+                ...selectedItem,
+                [option.name!]: choice.description!,
+              });
+              const selected =
+                selectedItem[option.name!] === choice.description;
+
+              return (
+                <li
+                  key={choice.value}
+                  onClick={() =>
+                    handelOptionSelect(option.name!, choice.description!)
+                  }
+                >
+                  {choice.description} {disabled && " - disabled"}{" "}
+                  {selected && " - selected"}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ))}
+    </div>
+  );
+};
+```
+
+### **CustomizeProducts.tsx | Most Difficult One | Javascript Game**
+
+CustomizeProducts.tsx(Final Version)
+
+```jsx
+"use client";
+
+import { products } from "@wix/stores";
+import { useEffect, useState } from "react";
+import Add from "./Add";
+
+interface SelectedOption {
+  [key: string]: string;
+}
+
+const CustomizeProducts = ({
+  productId,
+  variants,
+  productoptions,
+}: {
+  productId: string;
+  variants: products.Variant[];
+  productoptions: products.ProductOption[];
+}) => {
+  const [selectedItem, setSelectedItem] = useState<SelectedOption>({});
+
+  const [selectedVariant, setSelectedVariant] = useState<products.Variant>();
+
+  useEffect(() => {
+    const variant = variants.find((v) => {
+      const variantChoices = v.choices;
+      if (!variantChoices) return false;
+
+      return Object.entries(selectedItem).every(
+        ([key, value]) => variantChoices[key] === value
+      );
+    });
+
+    setSelectedVariant(variant);
+  }, [selectedItem, variants]);
+
+  const handelOptionSelect = (optionType: string, value: string) => {
+    setSelectedItem((prev) => ({ ...prev, [optionType]: value }));
+  };
+
+  // console.log(variants);
+
+  const isVariantInStock = (choices: SelectedOption) => {
+    return variants.some((v) => {
+      const variantChoices = v.choices;
+      if (!variantChoices) return false;
+
+      return (
+        Object.entries(choices).every(
+          ([key, value]) => variantChoices[key] === value
+        ) &&
+        v.stock?.inStock &&
+        v.stock.quantity &&
+        v.stock.quantity > 0
+      );
+    });
+  };
+
+  // console.log(selectedItem);
+  // console.log(isVariantInStock(selectedItem));
+
+  return (
+    <div className="flex flex-col gap-6">
+      {productoptions.map((option) => (
+        <div className="" key={option.name}>
+          <ul className="flex gap-4">
+            {option.choices?.map((choice) => {
+              const disabled = !isVariantInStock({
+                ...selectedItem,
+                [option.name!]: choice.description!,
+              });
+
+              const selected =
+                selectedItem[option.name!] === choice.description;
+
+              return option.name === "Color" ? (
+                <li
+                  key={choice.value}
+                  onClick={() =>
+                    handelOptionSelect(option.name!, choice.description!)
+                  }
+                  style={{
+                    backgroundColor: choice.value,
+                    cursor: disabled ? "not-allowed" : "pointer",
+                  }}
+                  className="w-8 h-8 rounded-full ring-1 ring-gray-300 relative"
+                >
+                  {selected && (
+                    <div className="absolute w-10 h-10 rounded-full ring-2 ring-sky-200 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 " />
+                  )}
+
+                  {disabled && (
+                    <div className="absolute w-10 h-[2px] top-1/2 left-1/2 bg-red-400 transform -translate-x-1/2 -translate-y-1/2 rotate-45" />
+                  )}
+                </li>
+              ) : (
+                <li
+                  key={choice.value}
+                  onClick={() =>
+                    handelOptionSelect(option.name!, choice.description!)
+                  }
+                  style={{
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    backgroundColor: selected
+                      ? "#f35c7a"
+                      : disabled
+                      ? "#FBCFE8"
+                      : "white",
+                    color: selected || disabled ? "white" : "#f35c7a",
+                    boxShadow: disabled ? "none" : "",
+                  }}
+                  className="ring-1 ring-redLight text-white rounded-md py-1 px-4 text-sm"
+                >
+                  {choice.description}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+      <Add
+        productId={productId}
+        variantId={
+          selectedVariant?._id || "00000000-0000-0000-0000-000000000000"
+        }
+        stockNumber={selectedVariant?.stock?.quantity || 0}
+      />
+    </div>
+  );
+};
+
+export default CustomizeProducts;
+```
+
+### **Add.tsx**
+
+```jsx
+"use client";
+import { useState } from "react";
+
+const Add = ({
+  productId,
+  variantId,
+  stockNumber,
+}: {
+  productId: string,
+  variantId: string,
+  stockNumber: number,
+}) => {
+  const [quantity, setQuantity] = useState(1);
+
+  const handelQuantity = (action: "dec" | "inc") => {
+    if (action === "dec" && quantity > 1)
+      setQuantity(quantity <= 1 ? 1 : quantity - 1);
+    if (action === "inc" && quantity < stockNumber) setQuantity(quantity + 1);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="font-medium">Choose a Quantity</h1>
+      <div className="flex justify-between">
+        <div className="flex items-center gap-4">
+          <div className="bg-gray-100 rounded-3xl flex items-center justify-between w-32">
+            <button
+              className="cursor-pointer text-xl px-4 py-2"
+              onClick={() => handelQuantity("dec")}
+            >
+              -
+            </button>
+            {quantity}
+            <button
+              className="cursor-pointer text-xl px-4 py-2"
+              onClick={() => handelQuantity("inc")}
+            >
+              +
+            </button>
+          </div>
+          <div className="">
+            Only <span className="text-orange-500">{stockNumber} items </span>
+            left! <br />
+            Don't miss it
+          </div>
+        </div>
+        <button className="w-36 text-sm rounded-3xl ring-1 ring-redLight text-redLight py-2 px-4 hover:bg-redLight cursor-pointer hover:text-white disabled:cursor-not-allowed disabled:bg-pink-200 disabled:text-white disabled:ring-0">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Add;
+```
+
+# List/Shop page | Filters
