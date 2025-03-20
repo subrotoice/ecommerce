@@ -1812,3 +1812,189 @@ export default Add;
 ```
 
 # List/Shop page | Filters
+
+### **list/page.tsx | as previous no change**
+
+```jsx
+import ProductList from "../_components/ProductList";
+
+const ListPage = async ({
+  searchParams,
+}: {
+  searchParams: { cat: string },
+}) => {
+  const wixClient = await wixClientServer();
+  const cat = await wixClient.collections.getCollectionBySlug(
+    searchParams.cat || "all-products"
+  );
+
+  return (
+    <div className="px-4 md:px-8 lg:px-16 xl:32 2xl:px-64">
+      {/* CAMPAING */}
+      <div className="hidden md:flex justify-between bg-pink-50 px-4 h-64">
+        <div className="w-2/3 flex flex-col items-center justify-center gap-8">
+          <h1 className="text-4xl font-semibold leading-[48px] text-gray-700">
+            Grab up to 50% of on
+            <br />
+            Selected Products
+          </h1>
+          <button className="rounded-3xl bg-redLight text-white w-max py-3 px-5 text-sm">
+            Buy Now
+          </button>
+        </div>
+        <div className="relative w-1/3">
+          <Image
+            src="/woman.png"
+            alt=""
+            sizes="30vw"
+            fill
+            className="object-contain"
+          />
+        </div>
+      </div>
+
+      {/* FILTER */}
+      <Filter />
+
+      {/* PRODUCTS */}
+      <h1 className="">{cat.collection?.name} For You!</h1>
+      <Suspense fallback="Loading...">
+        <ProductList
+          categoryId={
+            cat.collection?._id || "00000000-000000-000000-000000000001"
+          }
+          searchParams={searchParams}
+        />
+      </Suspense>
+    </div>
+  );
+};
+
+export default ListPage;
+```
+
+### **Filter.tsx | Some work**
+
+```jsx
+"use client";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import React from "react";
+
+const Filter = () => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+
+    const params = new URLSearchParams(searchParams);
+    params.set(name, value);
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  return (
+    <div className="flex justify-between my-8">
+      {/* LEFT */}
+      <div className="flex flex-wrap gap-6">
+        <select
+          name="type"
+          onChange={handleFilterChange}
+          className="bg-[#EBEDED] text-sm font-medium py-2 pl-2 rounded-full w-25"
+        >
+          <option value="">Type</option>
+          <option value="physical">Physical</option>
+          <option value="digital">Digital</option>
+        </select>
+        <input
+          type="text"
+          name="min"
+          onChange={handleFilterChange}
+          className="ring-1 ring-gray-400 outline-gray-500 pl-2 rounded-full w-24"
+          placeholder="min price"
+        />
+        <input
+          type="text"
+          name="max"
+          onChange={handleFilterChange}
+          className="border border-gray-300 outline-gray-400 pl-2 rounded-full w-24"
+          placeholder="max price"
+        />
+        <select
+          name="cat"
+          className="py-2 px-4 rounded-2xl text-xs font-medium bg-[#EBEDED]"
+          onChange={handleFilterChange}
+        >
+          <option>Category</option>
+          <option value="">New Arrival</option>
+          <option value="">Popular</option>
+        </select>
+      </div>
+      {/* RIGHT */}
+      <div className="">
+        <select
+          name="sort"
+          onChange={handleFilterChange}
+          className="outline-gray-300 border border-gray-200 p-2 rounded-full w-44"
+        >
+          <option>Sort By</option>
+          <option value="asc price">Price (low to high)</option>
+          <option value="desc price">Price (high to low)</option>
+          <option value="asc lastUpdated">Newest</option>
+          <option value="desc lastUpdated">Oldest</option>
+        </select>
+      </div>
+    </div>
+  );
+};
+
+export default Filter;
+```
+
+### **ProductList.tsx**
+
+Use Query builder like sql
+
+```jsx
+import Image from "next/image";
+import Link from "next/link";
+import { wixClientServer } from "../_lib/wixClientServer";
+
+const PRODUCT_PER_PAGE = 20;
+
+const ProductList = async ({
+  categoryId,
+  limit,
+  searchParams,
+}: {
+  categoryId: string,
+  limit?: number,
+  searchParams?: any,
+}) => {
+  const wixClient = await wixClientServer();
+  let productQuery = wixClient.products
+    .queryProducts()
+    .eq("collectionIds", categoryId)
+    .startsWith("name", searchParams?.name || "")
+    .hasSome("productType", [searchParams?.type || "physical", "digital"])
+    .gt("priceData.price", searchParams?.min || 0)
+    .lt("priceData.price", searchParams?.max || 999999)
+    .limit(limit || PRODUCT_PER_PAGE);
+  // .find();
+
+  if (searchParams?.sort) {
+    const [sortType, sortBy] = searchParams.sort.split(" ");
+
+    productQuery =
+      sortType === "asc"
+        ? productQuery.ascending(sortBy)
+        : productQuery.descending(sortBy);
+  }
+
+  const res = await productQuery.find();
+  // console.log(res.items);
+  // As Previous
+};
+```

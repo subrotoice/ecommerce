@@ -63,6 +63,7 @@ const CustomizeProducts = ({
     <div className="flex flex-col gap-6">
       {productoptions.map((option) => (
         <div className="" key={option.name}>
+          <h3 className="mb-4">Choose a {option.name}</h3>
           <ul className="flex gap-4">
             {option.choices?.map((choice) => {
               const disabled = !isVariantInStock({
